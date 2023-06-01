@@ -120,16 +120,17 @@ if 'model' not in st.session_state:
     st.session_state['model'] = SentenceTransformer('multi-qa-MiniLM-L6-cos-v1')
 
 connect_to_milvus()
-query = st.text_input("Enter a standalone question here (the bot is not aware of the previous questions asked, describe your context as much as possible).")
-mode = st.selectbox("Control the sources.", ["getabstract library", "fixed summary"])
-
 if 'titles' not in st.session_state:
     st.session_state['titles'] = get_all_summaries_available()
+
+query = st.text_input("Enter a standalone question here (the bot is not aware of the previous questions asked, describe your context as much as possible).")
+mode = st.selectbox("Control the sources.", ["getabstract library", "fixed summary"])
+if mode == "fixed summary":
+    summary_title = st.selectbox("choose the summaryid you want to use as source", st.session_state['titles'].values())
 
 if query:
     start_time = time.time()
     if mode == 'fixed summary':
-        summary_title = st.selectbox("choose the summaryid you want to use as source", st.session_state['titles'].values())
         summary_id = {v: k for k, v in st.session_state['titles'].items()}[summary_title]
         sources = [(summary_id, get_text_summaryid(summary_id))]
     else:
