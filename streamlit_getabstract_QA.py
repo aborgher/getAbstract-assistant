@@ -14,7 +14,7 @@ milvus_pwd = st.secrets["milvus_pwd"]
 
 openai.api_key = openai_key
 MAX_TOKEN_LIMIT = 4096
-MAX_OUTPUT_TOKEN = 300
+MAX_OUTPUT_TOKEN = 250
 token_counter = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
 
@@ -35,21 +35,20 @@ def search_collection(query, collection_name, model, expr="", topk=100):
         expr=expr,
         output_fields=["text", "summaryid"]
     )[0]
-    min_distance = 0.3
+    min_distance = 0.09
     parsed_results = [r for r in results if r.distance >= min_distance]
     end_time = time.time()
     st.write(f"time spend to query the vector database: {end_time - start_time:.2} seconds")
-    return [(r.entity.get('summaryid'), r.entity.get('text')) for r in parsed_results]
+    output = [(r.entity.get('summaryid'), r.entity.get('text')) for r in parsed_results]
+    st.write(output)
+    return output
 
 
 def get_system_text(context, query):
-    return f"""You are an AI assistant providing helpful advice.
-You are given the following extracted parts of a long document and a question.
-Provide an answer based on the context provided.
+    return f"""You are given the following extracted parts of a document and a question. Provide an answer based only on the context provided.
 If you can't find the answer in the context below, just say "Hmm, I'm not sure." Don't try to make up an answer.
 If the question is not related to the context, or the context is empty, politely respond that you are tuned to only answer questions that are related to the context.
-Answer in the same language of the question provided by the user.
-Answer in Markdown.
+Answer in the same language of the question provided by the user. Answer in Markdown.
 Context: {context}
 
 Question: {query}"""
@@ -134,7 +133,7 @@ if query:
         summary_id = {v: k for k, v in st.session_state['titles'].items()}[summary_title]
         sources = [(summary_id, get_text_summaryid(summary_id))]
     else:
-        sources = search_collection(query, "extracted_takeaway", st.session_state['model'], f'language == "en"')
+        sources = search_collection(query, "extracted_takeaway", st.session_state['model'], f'language in ["en"]')
     answer, ids = create_answer(sources, query)
     st.markdown(answer, unsafe_allow_html=True)
     summaries_used = "using these summaries as context:  \n"
