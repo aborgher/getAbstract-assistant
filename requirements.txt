@@ -1,0 +1,6 @@
+boto3==1.26.41
+openai==0.27.0
+tiktoken==0.4.0
+pandas==1.5.3
+sentence_transformers==2.2.2
+streamlit==1.21.0
