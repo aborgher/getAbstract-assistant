@@ -13,7 +13,7 @@ milvus_user = st.secrets["milvus_user"]
 milvus_pwd = st.secrets["milvus_pwd"]
 
 openai.api_key = openai_key
-GPTMODEL = 'gpt-4'
+GPTMODEL = 'gpt-3.5-turbo'
 MAX_TOKEN_LIMIT = 4096 if GPTMODEL == 'gpt-3.5-turbo' else 8192
 MAX_OUTPUT_TOKEN = 250
 token_counter = tiktoken.encoding_for_model(GPTMODEL)
@@ -36,13 +36,11 @@ def search_collection(query, collection_name, model, expr="", topk=100):
         expr=expr,
         output_fields=["text", "summaryid"]
     )[0]
-    min_distance = 0.15
+    min_distance = 0.25
     parsed_results = [r for r in results if r.distance >= min_distance]
     end_time = time.time()
     st.write(f"time spend to query the vector database: {end_time - start_time:.2} seconds")
-    output = [(r.entity.get('summaryid'), r.entity.get('text')) for r in parsed_results]
-    st.write([(o[0], num_tokens_from_string(o[1]), o[1]) for o in output])
-    return output
+    return [(r.entity.get('summaryid'), r.entity.get('text')) for r in parsed_results]
 
 
 def get_system_text(context, query):
