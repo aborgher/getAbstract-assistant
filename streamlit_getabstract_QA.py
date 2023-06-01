@@ -40,7 +40,7 @@ def search_collection(query, collection_name, model, expr="", topk=100):
     end_time = time.time()
     st.write(f"time spend to query the vector database: {end_time - start_time:.2} seconds")
     output = [(r.entity.get('summaryid'), r.entity.get('text')) for r in parsed_results]
-    st.write(output)
+    st.write([(o[0], num_tokens_from_string(o[1]), o[1]) for o in output])
     return output
 
 
