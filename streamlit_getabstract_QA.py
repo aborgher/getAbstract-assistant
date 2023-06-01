@@ -13,9 +13,10 @@ milvus_user = st.secrets["milvus_user"]
 milvus_pwd = st.secrets["milvus_pwd"]
 
 openai.api_key = openai_key
+GPTMODEL = 'gpt-4'
 MAX_TOKEN_LIMIT = 4096
 MAX_OUTPUT_TOKEN = 250
-token_counter = tiktoken.encoding_for_model("gpt-3.5-turbo")
+token_counter = tiktoken.encoding_for_model(GPTMODEL)
 
 
 def num_tokens_from_string(text):
@@ -35,7 +36,7 @@ def search_collection(query, collection_name, model, expr="", topk=100):
         expr=expr,
         output_fields=["text", "summaryid"]
     )[0]
-    min_distance = 0.09
+    min_distance = 0.15
     parsed_results = [r for r in results if r.distance >= min_distance]
     end_time = time.time()
     st.write(f"time spend to query the vector database: {end_time - start_time:.2} seconds")
@@ -70,7 +71,7 @@ def get_context(sources, query):
 def get_answer(context, query):
     start_time = time.time()
     response = openai.ChatCompletion.create(
-        model='gpt-3.5-turbo',
+        model=GPTMODEL,
         messages=[
             {"role": "system", "content": get_system_text(context, query)}
         ],
