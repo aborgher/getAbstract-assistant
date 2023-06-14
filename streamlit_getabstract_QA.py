@@ -95,7 +95,7 @@ def connect_to_milvus():
 def get_all_summaries_available():
     collection = Collection("summary_text")
     res = collection.query(
-      expr='(summaryid >= 0) AND (language == "en") AND (publication_date > 2017)',
+      expr='(summaryid >= 0) and (language == "en") and (publication_date > 2017)',
       output_fields=["summaryid", "title"]
     )
     return {r["summaryid"]: r["title"] for r in res}
