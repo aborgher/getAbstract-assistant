@@ -130,9 +130,9 @@ if 'model' not in st.session_state:
 connect_to_milvus()
 if 'titles' not in st.session_state:
     st.session_state['titles'] = get_all_summaries_available()
-if 'restricted_ids' not in st.session_state:
-    st.session_state['restricted_ids'] = get_summaries_in_milvus()
-
+    if 'restricted_ids' not in st.session_state:
+        st.session_state['restricted_ids'] = {i for i in get_summaries_in_milvus() if i not in st.session_state['titles'].keys()}
+    
 query = st.text_input("Enter a standalone question here (the bot is not aware of the previous questions asked, describe your context as much as possible).")
 mode = st.selectbox("Control the sources.", ["getabstract library", "fixed summary"])
 if mode == "fixed summary":
