@@ -23,7 +23,7 @@ def num_tokens_from_string(text):
     return len(token_counter.encode(text))
 
 
-def search_collection(query, collection_name, model, expr="", topk=100):
+def search_collection(query, collection_name, model, expr="", topk=100, ids_to_ignore={}):
     start_time = time.time()
     collection = Collection(collection_name)
     search_vec = model.encode(query)
@@ -37,7 +37,7 @@ def search_collection(query, collection_name, model, expr="", topk=100):
         output_fields=["text", "summaryid"]
     )[0]
     min_distance = 0.25
-    parsed_results = [r for r in results if r.distance >= min_distance]
+    parsed_results = [r for r in results if (r.distance >= min_distance) & (r.entity.get('summaryid') not in ids_to_ignore)]
     end_time = time.time()
     st.write(f"time spend to query the vector database: {end_time - start_time:.2} seconds")
     return [(r.entity.get('summaryid'), r.entity.get('text')) for r in parsed_results]
@@ -92,10 +92,20 @@ def connect_to_milvus():
 
 
 @st.cache_resource
+def get_summaries_in_milvus():
+    collection = Collection("extracted_takeaway")
+    res = collection.query(
+      expr='summaryid >= 0',
+      output_fields=["summaryid"]
+    )
+    return {r["summaryid"] for r in res}
+
+
+@st.cache_resource
 def get_all_summaries_available():
     collection = Collection("summary_text")
     res = collection.query(
-      expr='(summaryid >= 0) and (language == "en") and (publication_date > 2017)',
+      expr='(summaryid >= 0) and (language == "en") and (publication_date >= 2017)',
       output_fields=["summaryid", "title"]
     )
     return {r["summaryid"]: r["title"] for r in res}
@@ -120,6 +130,8 @@ if 'model' not in st.session_state:
 connect_to_milvus()
 if 'titles' not in st.session_state:
     st.session_state['titles'] = get_all_summaries_available()
+if 'restricted_ids' not in st.session_state:
+    st.session_state['restricted_ids'] = get_summaries_in_milvus()
 
 query = st.text_input("Enter a standalone question here (the bot is not aware of the previous questions asked, describe your context as much as possible).")
 mode = st.selectbox("Control the sources.", ["getabstract library", "fixed summary"])
@@ -132,7 +144,7 @@ if query:
         summary_id = {v: k for k, v in st.session_state['titles'].items()}[summary_title]
         sources = [(summary_id, get_text_summaryid(summary_id))]
     else:
-        sources = search_collection(query, "extracted_takeaway", st.session_state['model'], f'language in ["en"]')
+        sources = search_collection(query, "extracted_takeaway", st.session_state['model'], f'language in ["en"]', 100, st.session_state['restricted_ids'])
     answer, ids = create_answer(sources, query)
     st.markdown(answer, unsafe_allow_html=True)
     summaries_used = "using these summaries as context:  \n"
