@@ -167,7 +167,9 @@ if query:
     st.markdown(answer, unsafe_allow_html=True)
     summaries_used = "using these summaries as context:  \n"
     for ix in ids:
-        summaries_used += f"[{st.session_state['titles'][ix]}](https://www.getabstract.com/en/summary/test/{ix})  \n"
+        title = "title available only in ask miso" if ix not in st.session_state['titles'].keys() else st.session_state['titles'][ix]
+        link = https://www.getabstract.com/en/summary/test/{ix}
+        summaries_used += f"[{title}]({link})  \n"
     st.markdown(summaries_used)
     end_time = time.time()
     st.write(f"Overall time passed: {end_time - start_time:.2} seconds")
