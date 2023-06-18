@@ -167,7 +167,7 @@ if query:
     st.markdown(answer, unsafe_allow_html=True)
     summaries_used = "using these summaries as context:  \n"
     for ix in ids:
-        title = "title available only in ask miso" if ix not in st.session_state['titles'].keys() else st.session_state['titles'][ix]
+        title = f"summaryid={ix}" if ix not in st.session_state['titles'].keys() else st.session_state['titles'][ix]
         link = f"https://www.getabstract.com/en/summary/test/{ix}"
         summaries_used += f"[{title}]({link})  \n"
     st.markdown(summaries_used)
