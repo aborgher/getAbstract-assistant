@@ -5,18 +5,21 @@ from sentence_transformers import SentenceTransformer
 import gc
 from pymilvus import Collection, connections
 import time
+import requests
 
 
 openai_key = st.secrets["openai_key"]
 milvus_uri = st.secrets["milvus_uri"]
 milvus_user = st.secrets["milvus_user"]
 milvus_pwd = st.secrets["milvus_pwd"]
+ask_miso_qa_url = st.secrets["ask_miso_qa_url"]
 
 openai.api_key = openai_key
 GPTMODEL = 'gpt-3.5-turbo'
 MAX_TOKEN_LIMIT = 4096 if GPTMODEL == 'gpt-3.5-turbo' else 8192
 MAX_OUTPUT_TOKEN = 350
 token_counter = tiktoken.encoding_for_model(GPTMODEL)
+use_ask_miso_qa = True
 
 
 def num_tokens_from_string(text):
@@ -41,6 +44,18 @@ def search_collection(query, collection_name, model, expr="", topk=100, ids_to_i
     end_time = time.time()
     st.write(f"time spend to query the vector database: {end_time - start_time:.2} seconds")
     return [(r.entity.get('summaryid'), r.entity.get('text')) for r in parsed_results]
+
+
+def get_sources_from_ask_miso_qa(question):
+    d = {
+        "version": "v1.3",
+        "q": question,
+        "min_probability": 0.3,
+        "rows": 10
+    }
+    x = requests.post(ask_miso_qa_url, json=d)
+    xj = x.json()
+    return [(a['product_id'], a['answer']['text']) for a in xj['data']['answers']] if xj['message'] == 'success' else []    
 
 
 def get_system_text(context, query):
@@ -144,7 +159,10 @@ if query:
         summary_id = {v: k for k, v in st.session_state['titles'].items()}[summary_title]
         sources = [(summary_id, get_text_summaryid(summary_id))]
     else:
-        sources = search_collection(query, "extracted_takeaway", st.session_state['model'], f'language in ["en"]', 100, st.session_state['restricted_ids'])
+        if use_ask_miso_qa:
+            sources = get_sources_from_ask_miso_qa(query)
+        else:
+            sources = search_collection(query, "extracted_takeaway", st.session_state['model'], f'language in ["en"]', 100, st.session_state['restricted_ids'])
     answer, ids = create_answer(sources, query)
     st.markdown(answer, unsafe_allow_html=True)
     summaries_used = "using these summaries as context:  \n"
