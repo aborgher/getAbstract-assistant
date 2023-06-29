@@ -19,7 +19,7 @@ GPTMODEL = 'gpt-3.5-turbo'
 MAX_TOKEN_LIMIT = 4096 if GPTMODEL == 'gpt-3.5-turbo' else 8192
 MAX_OUTPUT_TOKEN = 350
 token_counter = tiktoken.encoding_for_model(GPTMODEL)
-use_ask_miso_qa = True
+use_ask_miso_qa = False
 
 
 def num_tokens_from_string(text):
