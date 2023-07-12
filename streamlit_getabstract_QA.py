@@ -89,6 +89,7 @@ def limit_sources(sources, query):
 
 def create_answer(sources, query):
     source_sel = limit_sources(sources, query)
+    st.write(get_prompt(source_sel))
     return get_run_gpt_prompt(get_prompt(source_sel), query, GPTMODEL), [s[0] for s in source_sel]
 
 
